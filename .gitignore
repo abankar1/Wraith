@@ -1,0 +1,11 @@
+node_modules/
+work/
+dist/
+outputs/
+.env
+.env.*
+!.env.example
+data/
+*.log
+.DS_Store
+pairing-qr.png
