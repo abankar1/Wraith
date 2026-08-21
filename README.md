@@ -113,10 +113,16 @@ sudo grep '^API_TOKEN=' /etc/wraith.env
 **Re-pair WhatsApp** (after a logout/ban, or when moving hosts)
 
 ```sh
+sudo /opt/wraith/repair.sh
+```
+
+Stops the service, clears the stale session, restarts, and tails the log so the fresh QR prints immediately — scan it, then `Ctrl+C`. Equivalent to running these by hand:
+
+```sh
 sudo systemctl stop wraith
 sudo rm -f /opt/wraith/data/session.enc
 sudo systemctl start wraith
-sudo journalctl -u wraith -f -o cat        # scan the QR that prints, immediately
+sudo journalctl -u wraith -f -o cat
 ```
 
 **Caddy (TLS reverse proxy)**
