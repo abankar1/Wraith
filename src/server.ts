@@ -1,5 +1,6 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
+import { formatMessage } from "./format-message.js";
 import type { Logger } from "./logger.js";
 import type { Config } from "./config.js";
 
@@ -50,8 +51,9 @@ export function buildServer(config: Config, sender: Sender, logger: Logger) {
       const body = await readJson(req) as { text?: unknown };
       if (typeof body.text !== "string" || !body.text.trim()) return reply(res, 400, { error: "text_required", requestId });
       if (body.text.length > config.maxMessageLength) return reply(res, 400, { error: "text_too_long", requestId });
-      const messageId = await sender.send(body.text);
-      logger.info({ requestId, messageId, textLength: body.text.length }, "Message sent");
+      const text = formatMessage(body.text);
+      const messageId = await sender.send(text);
+      logger.info({ requestId, messageId, textLength: text.length }, "Message sent");
       return reply(res, 202, { accepted: true, messageId, requestId });
     } catch (error) {
       logger.error({ requestId, error }, "Request failed");
