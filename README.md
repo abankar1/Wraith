@@ -69,3 +69,65 @@ For a Mac on a home network, use a private overlay network or an authenticated t
 - To revoke access, remove this linked device inside WhatsApp.
 - To pair again, stop the service, move `data/session.enc` to a safe backup location, and restart.
 - `GET /healthz` proves the HTTP process is alive; `GET /readyz` returns 200 only after WhatsApp connects and the configured group resolves.
+
+## Production server commands
+
+Deployed as a systemd service under a dedicated `wraith` user, behind Caddy for TLS. Replace `<ip>` and `<key>` with your instance's address and private key path.
+
+**Connect / disconnect**
+
+```sh
+ssh -i ~/.ssh/<key> opc@<ip>   # connect
+exit                            # disconnect (or Ctrl+D)
+```
+
+**Root shell** (needed for most commands below, since `/opt/wraith` is locked to the `wraith` user)
+
+```sh
+sudo -i
+```
+
+**Service status and logs**
+
+```sh
+sudo systemctl status wraith
+sudo systemctl is-active wraith caddy
+sudo journalctl -u wraith -f -o cat        # live tail, no syslog prefix
+sudo journalctl -u wraith -n 30 -o cat     # last 30 lines
+curl -s localhost:8787/readyz
+```
+
+**Restart / redeploy**
+
+```sh
+sudo systemctl restart wraith
+sudo /opt/wraith/deploy.sh                 # pulls origin/release, rebuilds, restarts
+```
+
+**Retrieve the API token** (never paste the output elsewhere insecurely; this only prints to your own terminal)
+
+```sh
+sudo grep '^API_TOKEN=' /etc/wraith.env
+```
+
+**Re-pair WhatsApp** (after a logout/ban, or when moving hosts)
+
+```sh
+sudo systemctl stop wraith
+sudo rm -f /opt/wraith/data/session.enc
+sudo systemctl start wraith
+sudo journalctl -u wraith -f -o cat        # scan the QR that prints, immediately
+```
+
+**Caddy (TLS reverse proxy)**
+
+```sh
+sudo systemctl status caddy
+sudo journalctl -u caddy -f -o cat
+```
+
+**Firewall** (port 443 is restricted to Make's published egress IPs only; port 80 stays open, rate-limited, for Let's Encrypt renewal)
+
+```sh
+sudo firewall-cmd --list-all
+```
